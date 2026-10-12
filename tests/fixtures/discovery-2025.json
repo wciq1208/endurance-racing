@@ -1,0 +1,245 @@
+{
+  "status": "ready",
+  "queried_at": "2026-10-12T09:29:49.753267+00:00",
+  "ssid": 262,
+  "year": 2025,
+  "keyword": "24",
+  "available_races": [
+    {
+      "id": 1018,
+      "name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛"
+    },
+    {
+      "id": 854,
+      "name": "2024 赛卡联盟百力通206动力24小时卡丁车耐力赛"
+    }
+  ],
+  "matched_races": [
+    {
+      "id": 1018,
+      "name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛"
+    }
+  ],
+  "rounds": [
+    {
+      "id": 4322,
+      "name": "第七届",
+      "race_id": 1018
+    }
+  ],
+  "sessions": [
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77378,
+      "group_name": "24小时耐力赛",
+      "pid": 2011446,
+      "session_name": "官方练习",
+      "type": 1,
+      "start_time": "2025/12/20 9:30:00",
+      "session_status": 3
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77378,
+      "group_name": "24小时耐力赛",
+      "pid": 2011447,
+      "session_name": "计时排位",
+      "type": 2,
+      "start_time": "2025/12/20 12:00:00",
+      "session_status": 3
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77378,
+      "group_name": "24小时耐力赛",
+      "pid": 2011448,
+      "session_name": "正赛",
+      "type": 3,
+      "start_time": "2025/12/20 16:00:00",
+      "session_status": 3
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011439,
+      "session_name": "TEST",
+      "type": 1,
+      "start_time": "2025/12/18 17:36:36",
+      "session_status": 3
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011433,
+      "session_name": "TEST03",
+      "type": 1,
+      "start_time": "2025/12/19 12:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011434,
+      "session_name": "TEST04",
+      "type": 1,
+      "start_time": "2025/12/19 13:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011435,
+      "session_name": "TEST05",
+      "type": 1,
+      "start_time": "2025/12/19 14:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011436,
+      "session_name": "TEST06",
+      "type": 1,
+      "start_time": "2025/12/19 15:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011431,
+      "session_name": "TEST01",
+      "type": 1,
+      "start_time": "2025/12/19 15:12:31",
+      "session_status": 3
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011437,
+      "session_name": "TEST07",
+      "type": 1,
+      "start_time": "2025/12/19 16:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011438,
+      "session_name": "TEST08",
+      "type": 1,
+      "start_time": "2025/12/19 17:00:00",
+      "session_status": 0
+    },
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77377,
+      "group_name": "TEST",
+      "pid": 2011432,
+      "session_name": "TEST02",
+      "type": 1,
+      "start_time": "2025/12/19 17:42:44",
+      "session_status": 3
+    }
+  ],
+  "candidates": [
+    {
+      "ssid": 262,
+      "race_id": 1018,
+      "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+      "round_id": 4322,
+      "round_name": "第七届",
+      "group_id": 77378,
+      "group_name": "24小时耐力赛",
+      "pid": 2011448,
+      "session_name": "正赛",
+      "type": 3,
+      "start_time": "2025/12/20 16:00:00",
+      "session_status": 3
+    }
+  ],
+  "selected": {
+    "ssid": 262,
+    "race_id": 1018,
+    "race_name": "2025 赛卡联盟百力通206动力24小时卡丁车耐力赛",
+    "round_id": 4322,
+    "round_name": "第七届",
+    "group_id": 77378,
+    "group_name": "24小时耐力赛",
+    "pid": 2011448,
+    "session_name": "正赛",
+    "type": 3,
+    "start_time": "2025/12/20 16:00:00",
+    "session_status": 3,
+    "all_class": {
+      "flag": "get-race-result-by-pid",
+      "ssid": 262,
+      "userId": 0,
+      "pid": 2011448,
+      "isTest": 1,
+      "group": ""
+    },
+    "control_message": {
+      "flag": "get-race-control-by-pid",
+      "ssid": 262,
+      "userId": 0,
+      "pid": 2011448
+    }
+  },
+  "message": "已找到唯一正赛场次。"
+}
