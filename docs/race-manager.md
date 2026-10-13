@@ -1,5 +1,7 @@
 # 湖南24小时车队经理
 
+交互与输出示例见[车队经理演示样例](examples.md)，包含前后车配速、雷达回波、进站窗口及追近机会分析。
+
 ## 目录
 
 - `.agents/skills/z24-race-manager/SKILL.md`：agent流程、策略规则及数据使用边界。
