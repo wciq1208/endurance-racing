@@ -41,11 +41,15 @@ def stop_group(state):
     return stop_owned(state, managed_scripts())
 
 
+def lane_interval(config, lane):
+    return float(config.get('weather_interval',120) if lane=='weather' else config['interval'])
+
+
 def worker_command(lane,config_path,config):
     if lane=='weather':
         w=config['weather']
         return [sys.executable,str(SCRIPTS[lane]),'--output',config['output'],
-                '--token',config['token'],'--mode',config['mode'],'--interval',str(config['interval']),
+                '--token',config['token'],'--mode',config['mode'],'--interval',str(lane_interval(config,lane)),
                 '--lat',str(w['lat']),'--lon',str(w['lon']),'--station',w['station'],'--location',w['location']]
     return [sys.executable,str(SCRIPTS[lane]),'--config',str(config_path),'--token',config['token']]
 
@@ -60,7 +64,7 @@ def supervise(config_path, token):
                 child=children.get(lane)
                 if child is not None and child.poll() is None:continue
                 if child is not None:
-                    children[lane]=None;retry[lane]=time.monotonic()+config['interval']
+                    children[lane]=None;retry[lane]=time.monotonic()+lane_interval(config,lane)
                     failure(config,lane,'worker exited; supervisor will restart')
                 if time.monotonic()<retry.get(lane,0):continue
                 if lane not in logs:logs[lane]=(out/'logs'/f'{lane}.log').open('a',encoding='utf-8')
@@ -68,7 +72,7 @@ def supervise(config_path, token):
                 children[lane]=child
                 atomic(out/'workers.json',json.dumps({k:v.pid if v else None for k,v in children.items()}))
             except Exception:
-                traceback.print_exc();retry[lane]=time.monotonic()+config['interval']
+                traceback.print_exc();retry[lane]=time.monotonic()+lane_interval(config,lane)
         time.sleep(1)
 
 def main():
@@ -76,7 +80,8 @@ def main():
     p.add_argument('action',choices=['start','stop','status','doctor','supervise'])
     p.add_argument('--mode',choices=['live','test'],default='live')
     p.add_argument('--team');p.add_argument('--year',type=int,default=2026)
-    p.add_argument('--discovery',type=Path);p.add_argument('--interval',type=float,default=30)
+    p.add_argument('--discovery',type=Path);p.add_argument('--interval',type=float,default=60,help='成绩和公告轮询秒数，默认60')
+    p.add_argument('--weather-interval',type=float,default=120,help='天气轮询秒数，默认120')
     p.add_argument('--config',type=Path);p.add_argument('--token')
     a=p.parse_args()
     if a.action=='doctor':
@@ -97,7 +102,8 @@ def main():
         if a.action=='stop':
             print('stopped' if stop_group(old) else 'not running');active.unlink(missing_ok=True);return
         if not a.team or not a.team.strip():p.error('启动必须指定 --team 车队完整名称')
-        if not 5<=a.interval<=3600:p.error('interval须为5..3600秒，默认30秒')
+        if not 5<=a.interval<=3600:p.error('interval须为5..3600秒，默认60秒')
+        if not 5<=a.weather_interval<=3600:p.error('weather-interval须为5..3600秒，默认120秒')
         from race_doctor import report
         health=report()
         if not health['ready']:p.error('环境检查失败：'+json.dumps(health,ensure_ascii=False))
@@ -125,7 +131,7 @@ def main():
         token=uuid.uuid4().hex
         out=OUTPUTS/token
         (out/'logs').mkdir(parents=True)
-        config={'skill_id':SKILL_ID,'weather':dict(VENUE_WEATHER),'mode':a.mode,'token':token,'team':a.team.strip(),'selected':selected,'interval':a.interval,'output':str(out),'started_at':now()}
+        config={'skill_id':SKILL_ID,'weather':dict(VENUE_WEATHER),'mode':a.mode,'token':token,'team':a.team.strip(),'selected':selected,'interval':a.interval,'weather_interval':a.weather_interval,'output':str(out),'started_at':now()}
         config_path=out/'config.json';atomic(config_path,json.dumps(config,ensure_ascii=False,indent=2))
         for lane in LANES:
             try:failure(config,lane,'waiting for first poll',status='waiting')

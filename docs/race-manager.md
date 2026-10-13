@@ -29,7 +29,7 @@ uv run python .agents/skills/z24-race-manager/scripts/race_live.py start \
   --team '丰速上海宝山来开赛车SDT 一队'
 ```
 
-每次start先停止并确认旧进程退出，再清空受管产出目录。删除范围固定为`.runtime/z24-race-manager/outputs/`，拒绝运行目录符号链接；不根据外部输入路径删除其他文件。发现失败时也没有旧产出可误读。首次请求完成前CSV和图片明确标为waiting。每路独立轮询，默认30秒；错误继续重试，worker退出由监督进程重启。stop停止进程并移除当前指针，产出留到下次start清理。若需保留记录，应在重启前由用户另行导出到受管目录以外。
+每次start先停止并确认旧进程退出，再清空受管产出目录。删除范围固定为`.runtime/z24-race-manager/outputs/`，拒绝运行目录符号链接；不根据外部输入路径删除其他文件。发现失败时也没有旧产出可误读。首次请求完成前CSV和图片明确标为waiting。每路独立轮询，默认天气120秒、成绩和公告60秒；错误继续重试，worker退出由监督进程重启。stop停止进程并移除当前指针，产出留到下次start清理。若需保留记录，应在重启前由用户另行导出到受管目录以外。
 
 主输入为radar.png、all_class.csv、control_message.csv。CSV首行为采集元数据，第二行列名；PNG顶部标采集时间并内嵌元数据。失败输出明确标错，不冒充无雨或无公告。查询建议携带启动结果的token：
 
@@ -40,7 +40,7 @@ uv run python .agents/skills/z24-race-manager/scripts/race_csv_query.py '当前�
 
 逐圈补查输出在本次analysis目录；详细用法见skill引用文档。启动器默认live拒绝已结束场次，测试必须显式标记test；这不把历史终局成绩自动转换成真实回放。
 
-脚本以自身位置定位项目，不依赖个人绝对路径；运行时路径由本次启动生成，移动项目后重新启动。天气字体需系统安装中文字体（例如Noto Sans CJK SC），未安装可能缺字。AI每30秒读取并解释数据依赖活跃会话；采集脚本不会自动唤醒LLM。
+脚本以自身位置定位项目，不依赖个人绝对路径；运行时路径由本次启动生成，移动项目后重新启动。天气字体需系统安装中文字体（例如Noto Sans CJK SC），未安装可能缺字。AI每1分钟读取并解释数据依赖活跃会话；采集脚本不会自动唤醒LLM。
 
 验证：`uv run python -m unittest discover -s tests`。旧MD流程、SQLite采集器、Raceby逆向工具和历史测试产出已经移除，可从Git历史找回此前已提交的文件。
 
