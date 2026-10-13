@@ -1,6 +1,6 @@
 # 雷达回波
 
-天气脚本在根目录scripts，常驻入口race_weather.py由skill启动器管理，每30秒独立轮询。底层weather_radar_collect.py下载中国天气网长沙az9731连续帧，并绘制湖南国际卡丁车场（113.062648E，27.820600N）附近的源帧及+5/+10/+20分钟实验外推。雷达图在当前run目录radar.png，原图缓存同目录weather-cache。
+天气脚本在根目录scripts，常驻入口race_weather.py由skill启动器管理，每2分钟独立轮询。底层weather_radar_collect.py下载中国天气网长沙az9731连续帧，并绘制湖南国际卡丁车场（113.062648E，27.820600N）附近的源帧及+5/+10/+20分钟实验外推。雷达图在当前run目录radar.png，原图缓存同目录weather-cache。
 
 来源：中国天气网 https://www.weather.com.cn/weatherMap/ ，雷达索引 https://img.weather.com.cn/new_radar/json/az9731.json ，定位范围 https://img.weather.com.cn/radarinfo/img_bounds.json 。图中使用原始像素和官方dBZ色标，透明区域不等于确定无雨。
 
@@ -13,7 +13,7 @@
 ```sh
 uv run python scripts/race_weather.py --lat 27.8206 --lon 113.062648 \
   --station az9731 --location '株洲国际卡丁车场' \
-  --output '.runtime/z24-race-manager/outputs/当前run' --token '当前run' --interval 30 --mode test
+  --output '.runtime/z24-race-manager/outputs/当前run' --token '当前run' --interval 120 --mode test
 ```
 
 正常运行无需手动执行此命令：株洲skill的启动器通过VENUE_WEATHER配置构建完整参数。其他赛事传入其他位置和覆盖该位置的雷达站，公共天气脚本无需修改。两份CSV仍由各自赛事skill生成。

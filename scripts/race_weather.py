@@ -60,7 +60,7 @@ def parser():
     p.add_argument('--station',required=True);p.add_argument('--location',required=True)
     p.add_argument('--output',type=Path,required=True);p.add_argument('--token',required=True)
     p.add_argument('--mode',choices=['live','test'],default='live')
-    p.add_argument('--interval',type=float,default=30);p.add_argument('--once',action='store_true')
+    p.add_argument('--interval',type=float,default=120);p.add_argument('--once',action='store_true')
     return p
 
 def main():

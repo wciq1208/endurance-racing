@@ -47,6 +47,9 @@ time.sleep(90)
             states=[]
             try:
                 first=start();states.append(first)
+                config=json.loads(Path(first['config']).read_text(encoding='utf-8'))
+                self.assertEqual(config['interval'],60)
+                self.assertEqual(config['weather_interval'],120)
                 self.assertTrue(json.loads(run('status'))['running'])
                 second=start();states.append(second)
                 self.assertNotEqual(first['token'],second['token'])
