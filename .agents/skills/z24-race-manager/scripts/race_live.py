@@ -4,8 +4,8 @@ import argparse
 import portalocker
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 import subprocess
 import sys
 import time
@@ -18,14 +18,17 @@ SKILL_ID='z24-race-manager'
 VENUE_WEATHER=dict(lat=27.8206,lon=113.062648,station='az9731',location='株洲国际卡丁车场')
 STATE=ROOT/'.runtime'/SKILL_ID
 OUTPUTS=STATE/'outputs'
+PUBLIC=ROOT/'.runtime/public/race-data'/SKILL_ID
 SCRIPTS={'weather':WEATHER_SCRIPTS/'race_weather.py','all_class':SKILL_SCRIPTS/'race_all_class.py','control_message':SKILL_SCRIPTS/'race_control_message.py'}
 
-def clear_outputs():
-    # Never follow a symlink into an unrelated directory. launch.lock stays outside.
-    if STATE.parent.is_symlink() or STATE.is_symlink() or OUTPUTS.is_symlink():
-        raise ValueError('受管运行目录不能是符号链接')
-    if OUTPUTS.exists():shutil.rmtree(OUTPUTS)
-    OUTPUTS.mkdir(parents=True)
+def clear_current_outputs():
+    # Fixed owned directories only; refuse symlinks at every parent.
+    for folder in (OUTPUTS,PUBLIC):
+        if any(p.is_symlink() for p in (folder,*folder.parents)):
+            raise ValueError('运行目录不能是符号链接')
+    for folder in (OUTPUTS,PUBLIC):
+        if folder.exists():shutil.rmtree(folder)
+        folder.mkdir(parents=True)
 
 
 def managed_scripts():
@@ -50,6 +53,7 @@ def worker_command(lane,config_path,config):
         w=config['weather']
         return [sys.executable,str(SCRIPTS[lane]),'--output',config['output'],
                 '--token',config['token'],'--mode',config['mode'],'--interval',str(lane_interval(config,lane)),
+                *(['--data-output',config['data_output']] if config.get('data_output') else []),
                 '--lat',str(w['lat']),'--lon',str(w['lon']),'--station',w['station'],'--location',w['location']]
     return [sys.executable,str(SCRIPTS[lane]),'--config',str(config_path),'--token',config['token']]
 
@@ -91,7 +95,8 @@ def main():
         return
     if a.action=='supervise':
         supervise(a.config.resolve(),a.token);return
-    if STATE.parent.is_symlink() or STATE.is_symlink():p.error('运行目录不能是符号链接')
+    if any(p.is_symlink() for folder in (STATE,OUTPUTS,PUBLIC) for p in (folder,*folder.parents)):
+        p.error('运行目录不能是符号链接')
     STATE.mkdir(parents=True,exist_ok=True)
     with (STATE/'launch.lock').open('a',encoding='utf-8') as lock:
         portalocker.lock(lock,portalocker.LOCK_EX)
@@ -100,7 +105,7 @@ def main():
         if a.action=='status':
             print(json.dumps(dict(now=now(),running=owned_group(old),active=old),ensure_ascii=False,indent=2));return
         if a.action=='stop':
-            print('stopped' if stop_group(old) else 'not running');active.unlink(missing_ok=True);return
+            print('stopped' if stop_group(old) else 'not running');active.unlink(missing_ok=True);(PUBLIC/'active.json').unlink(missing_ok=True);return
         if not a.team or not a.team.strip():p.error('启动必须指定 --team 车队完整名称')
         if not 5<=a.interval<=3600:p.error('interval须为5..3600秒，默认60秒')
         if not 5<=a.weather_interval<=3600:p.error('weather-interval须为5..3600秒，默认120秒')
@@ -110,13 +115,12 @@ def main():
         for warning in health['warnings']:print(warning,file=sys.stderr)
         # Cleanup is scoped to this skill, regardless of the previous race/year.
         stop_group(old)
-        if owned_group(old):p.error('旧进程未退出，拒绝清理产出')
+        if owned_group(old):p.error('旧进程未退出，拒绝启动新run')
         active.unlink(missing_ok=True)
-        # Read explicit configuration before clearing any generated outputs.
-        try:
-            supplied=json.loads(a.discovery.read_text(encoding='utf-8')) if a.discovery else None
-        finally:
-            clear_outputs()
+        (PUBLIC/'active.json').unlink(missing_ok=True)
+        # Read supplied discovery before replacing managed outputs.
+        supplied=json.loads(a.discovery.read_text(encoding='utf-8')) if a.discovery else None
+        clear_current_outputs()
         if a.discovery:
             d=supplied
         else:
@@ -131,9 +135,12 @@ def main():
         token=uuid.uuid4().hex
         out=OUTPUTS/token
         (out/'logs').mkdir(parents=True)
-        config={'skill_id':SKILL_ID,'weather':dict(VENUE_WEATHER),'mode':a.mode,'token':token,'team':a.team.strip(),'selected':selected,'interval':a.interval,'weather_interval':a.weather_interval,'output':str(out),'started_at':now()}
+        config={'skill_id':SKILL_ID,'weather':dict(VENUE_WEATHER),'mode':a.mode,'token':token,'team':a.team.strip(),'selected':selected,'interval':a.interval,'weather_interval':a.weather_interval,'output':str(out),'started_at':now(),'data_output':str(PUBLIC/token)}
+        from race_live_common import data_folder
+        from race_data.csv_io import run_from_config
+        data_folder(config)
         config_path=out/'config.json';atomic(config_path,json.dumps(config,ensure_ascii=False,indent=2))
-        for lane in LANES:
+        for lane in (*LANES,'laps'):
             try:failure(config,lane,'waiting for first poll',status='waiting')
             except Exception:traceback.print_exc()
         with (out/'logs/supervisor.log').open('a',encoding='utf-8') as log:
@@ -141,8 +148,9 @@ def main():
                   '--config',str(config_path),'--token',token],stdin=subprocess.DEVNULL,
                   stdout=log,stderr=subprocess.STDOUT,close_fds=True,
                   env={**os.environ,'PYTHONUTF8':'1','PYTHONIOENCODING':'utf-8'},**detached_options())
-        state=dict(pid=child.pid,platform=sys.platform,token=token,output=str(out),config=str(config_path),started_at=now(),team=config['team'])
+        state=dict(pid=child.pid,platform=sys.platform,token=token,output=str(out),config=str(config_path),started_at=now(),team=config['team'],data_output=config['data_output'])
         atomic(active,json.dumps(state,ensure_ascii=False,indent=2))
+        atomic(PUBLIC/'active.json',json.dumps(dict(run=run_from_config(config).model_dump(mode='json'),base=f'/race-data/{SKILL_ID}/{token}/'),ensure_ascii=False))
         print(json.dumps(state,ensure_ascii=False,indent=2))
 
 if __name__=='__main__':main()

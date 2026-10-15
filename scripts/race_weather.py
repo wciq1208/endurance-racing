@@ -12,6 +12,7 @@ import sys
 import time
 import traceback
 from types import SimpleNamespace
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 
 
 def now():return dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).isoformat(timespec='milliseconds')
@@ -21,7 +22,6 @@ def atomic(path,data):
     tmp=path.with_name(path.name+f'.{os.getpid()}.tmp');tmp.write_bytes(data);tmp.replace(path)
 
 def failure_image(path,meta,label,error):
-    path.unlink(missing_ok=True)
     from PIL import Image,ImageDraw,PngImagePlugin
     from radar_fonts import pillow_font
     im=Image.new('RGB',(1500,260),'#f4f7fb');draw=ImageDraw.Draw(im);font=pillow_font(26)
@@ -52,13 +52,21 @@ def once(a):
     for k,v in values.items():info.add_text(k,str(v))
     with Image.open(args.output/radar['chart']) as im:
         buffer=io.BytesIO();im.save(buffer,format='PNG',pnginfo=info)
-    atomic(a.output/'radar.png',buffer.getvalue())
+    folder=getattr(a,'data_output',None) or a.output
+    atomic(folder/'radar.png',buffer.getvalue())
+    if getattr(a,'data_output',None):
+        from race_data.models import Collection, WeatherFrame
+        from race_data.csv_io import publish
+        frame=WeatherFrame(run_id=a.token,collected_at=result['collected_at'],source_time=radar['nowcast']['source_time'],
+                           image_path='radar.png',nowcast_available=radar['nowcast']['available'])
+        publish(folder,Collection(run_id=a.token,lane='weather',status='ok',attempted_at=attempted,collected_at=result['collected_at']),{'weather':[frame]})
 
 def parser():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--lat',type=float,required=True);p.add_argument('--lon',type=float,required=True)
     p.add_argument('--station',required=True);p.add_argument('--location',required=True)
     p.add_argument('--output',type=Path,required=True);p.add_argument('--token',required=True)
+    p.add_argument('--data-output',type=Path)
     p.add_argument('--mode',choices=['live','test'],default='live')
     p.add_argument('--interval',type=float,default=120);p.add_argument('--once',action='store_true')
     return p
@@ -78,7 +86,13 @@ def main():
             subprocess.run([sys.executable,str(Path(__file__).resolve()),*sys.argv[1:],'--once'],check=True,timeout=90)
         except Exception as exc:
             traceback.print_exc()
-            try:failure_image(a.output/'radar.png',meta(a,'error',now(),error=str(exc)),a.location,exc)
+            try:
+                folder=a.data_output or a.output
+                if a.data_output:
+                    from race_data.models import Collection
+                    from race_data.csv_io import failure
+                    failure(folder,Collection(run_id=a.token,lane='weather',status='error',attempted_at=now(),error=str(exc)[:600]))
+                failure_image(folder/'radar.png',meta(a,'error',now(),error=str(exc)),a.location,exc)
             except Exception:traceback.print_exc()
         time.sleep(max(0,a.interval-(time.monotonic()-tick)))
 if __name__=='__main__':main()

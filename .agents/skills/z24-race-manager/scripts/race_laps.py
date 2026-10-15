@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guest lap supplementation: actual crossings and code-computed pace, exported as CSV."""
+"""Guest lap supplementation: actual crossings and code-computed pace, published as canonical CSV."""
 import argparse
 import concurrent.futures
 import datetime as dt
@@ -7,7 +7,10 @@ import math
 from pathlib import Path
 import statistics
 from myracing_read import read
-from race_live_common import CST, read_csv, write_csv, now
+from race_live_common import CST, ROOT, now
+import json
+from race_data.csv_io import read_csv, read_active, freshness, publish
+from race_data.models import Lap, Collection
 from race_clock import race_clock
 
 
@@ -43,8 +46,8 @@ def summarize(items, at, pit_cost=180):
                  last_lap_seconds=records[-1][2],crossing_age_seconds=round(age,3),
                  pace_median_seconds=round(pace,3),pace_mad_seconds=round(spread,3),pace_samples=len(clean),
                  excluded_recent_laps=len(window)-len(clean),
-                 previous10_median_seconds=round(prev,3) if prev else '',
-                 pace_change_seconds=round(pace-prev,3) if prev else '',
+                 previous10_median_seconds=round(prev,3) if prev else None,
+                 pace_change_seconds=round(pace-prev,3) if prev else None,
                  assumed_pit_loss_seconds=pit_cost,pit_loss_equivalent_laps=round(pit_cost/pace,3),
                  phase_estimate_usable=len(clean)>=5 and 0<=age<=1.5*pace and records[-1][2]<=1.5*pace)
     return records,summary
@@ -52,15 +55,18 @@ def summarize(items, at, pit_cost=180):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--results',required=True,type=Path);p.add_argument('--team',required=True)
+    p.add_argument('--active',type=Path,default=ROOT/'.runtime/z24-race-manager/active.json')
+    p.add_argument('--run-id',required=True);p.add_argument('--team',required=True)
     p.add_argument('--cars',default='',help='额外车号，以逗号分隔');p.add_argument('--all-cars',action='store_true')
-    p.add_argument('--output',required=True,type=Path)
     when=p.add_mutually_exclusive_group();when.add_argument('--at',help='历史截止时刻，ISO含时区');when.add_argument('--replay-cycle',action='store_true')
     p.add_argument('--pit-cost',type=float,default=180,help='用户假定净损失秒数，仅作情景计算')
     a=p.parse_args()
     if not math.isfinite(a.pit_cost) or a.pit_cost<=0:p.error('pit-cost must be positive finite')
-    meta,_,teams=read_csv(a.results)
-    if meta.get('status')!='ok':p.error('成绩输入必须成功；不能用失败空表查询')
+    active=read_active(a.active,a.run_id)
+    envelope,results=read_csv(Path(active['data_output'])/'results.csv',a.run_id,'results')
+    if not freshness(envelope)['fresh']:p.error('成绩输入失败或超过120秒')
+    meta=json.loads(envelope.collection.metadata_json)
+    teams=[dict(carNo=r.car_number,carTeam=r.team_name,nicname=r.driver_name or '',id=r.result_id) for r in results]
     targets=[t for t in teams if a.team.strip() in {t.get('carTeam','').strip(),t.get('nicname','').strip()}]
     if len(targets)!=1:p.error('目标车队必须唯一匹配')
     clock=dt.datetime.now(CST)
@@ -88,13 +94,19 @@ def main():
             summaries.append(dict(prefix,**summary))
             all_laps.extend(dict(prefix,lap_id=item['id'],laps=item['laps'],crossing_at=t.isoformat(),lap_seconds=seconds) for t,item,seconds in records)
     errors=sum(s['status']=='error' for s in summaries)
-    output_meta=dict(meta,collected_at=now(),attempted_at=clock.isoformat(),endpoint='get-race-result-item',
-                     status='partial' if errors else 'ok',mode=mode,analysis_at=at.isoformat(),
-                     queried_cars=len(selected),total_cars=len(teams),failed_cars=errors,
-                     note='逐圈响应无场次回显，result_id仅取自指定成绩CSV；过线时间需结合实际计时线解释')
-    for filename,rows,fallback in [('laps.csv',all_laps,['carNo','crossing_at','lap_seconds']),('pace.csv',summaries,['carNo','status'])]:
-        fields=list(dict.fromkeys(k for r in rows for k in r)) or fallback
-        write_csv(a.output/filename,output_meta,rows,fields)
+    collected=now()
+    status=Collection(run_id=a.run_id,lane='laps',status='partial' if errors else 'ok',
+        attempted_at=clock.isoformat(),collected_at=collected,
+        metadata_json=json.dumps(dict(mode=mode,analysis_at=at.isoformat(),queried_cars=len(selected),total_cars=len(teams),failed_cars=errors)))
+    rows=[Lap(result_id=str(r['result_id']),car_number=r['carNo'],team_name=r['carTeam'],
+        lap_id=str(r['lap_id']),lap_number=r['laps'],crossing_at=r['crossing_at'],lap_seconds=r['lap_seconds'],received_at=r['received_at']) for r in all_laps]
+    analyses=[]
+    for summary in summaries:
+        values={k:v for k,v in summary.items() if k not in {'carNo','carTeam'}}
+        values.update(car_number=summary['carNo'],team_name=summary['carTeam'])
+        analyses.append(values)
+    read_active(a.active,a.run_id)
+    publish(active['data_output'],status,{'laps':rows,'pace':analyses})
     for s in summaries:print(s)
 
 if __name__=='__main__':main()

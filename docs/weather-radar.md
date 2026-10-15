@@ -16,4 +16,4 @@ uv run python scripts/race_weather.py --lat 27.8206 --lon 113.062648 \
   --output '.runtime/z24-race-manager/outputs/当前run' --token '当前run' --interval 120 --mode test
 ```
 
-正常运行无需手动执行此命令：株洲skill的启动器通过VENUE_WEATHER配置构建完整参数。其他赛事传入其他位置和覆盖该位置的雷达站，公共天气脚本无需修改。两份CSV仍由各自赛事skill生成。
+正常运行无需手动执行此命令：株洲skill的启动器通过VENUE_WEATHER配置构建完整参数。其他赛事传入其他位置和覆盖该位置的雷达站，公共天气脚本无需修改。天气PNG保持独立文件，并将路径、源帧时间和采集状态发布到Pydantic通用weather.csv；赛事成绩和公告由各自skill转换为统一模型后原子发布CSV。

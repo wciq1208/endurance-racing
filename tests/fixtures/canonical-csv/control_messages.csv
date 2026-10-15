@@ -1,0 +1,4 @@
+# collected_at,2026-10-15T12:00:00+08:00,envelope,"{""schema_version"":2,""dataset"":""control_messages"",""snapshot_id"":""23985e3afd99489aa2413fbd24ef2419"",""run"":{""run_id"":""00000000000000000000000000000000"",""skill_id"":""z24-race-manager"",""mode"":""test"",""team"":""演示车队"",""started_at"":""2026-10-15T12:00:00+08:00"",""station_id"":""262"",""race_id"":""1"",""round_id"":""2"",""session_id"":""3"",""race_name"":"""",""session_name"":"""",""session_start"":null,""session_status"":null},""collection"":{""run_id"":""00000000000000000000000000000000"",""lane"":""control_message"",""status"":""ok"",""attempted_at"":""2026-10-15T12:00:00+08:00"",""collected_at"":""2026-10-15T12:00:00+08:00"",""error"":"""",""metadata_json"":""{}""}}"
+message_id,sequence,published_at_source,event_time_source,body
+001,\N,,\N,"更正,撤销
+""25号""原处罚\\N"

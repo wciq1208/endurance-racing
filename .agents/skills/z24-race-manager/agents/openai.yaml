@@ -1,4 +1,4 @@
 interface:
   display_name: "株洲24小时耐力赛车队经理"
-  short_description: "独立轮询雷达和赛事CSV，用代码计算目标车队的进站窗口与策略"
+  short_description: "独立轮询雷达和通用赛事CSV，用代码计算目标车队的进站窗口与策略"
   default_prompt: "使用 $z24-race-manager，启动株洲24小时耐力赛车队经理；我的车队完整名称是「填写车队名」。"

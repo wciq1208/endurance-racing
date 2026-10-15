@@ -1,0 +1,2 @@
+# Preserve the RFC4180 CRLF bytes used by the cross-language CSV fixtures.
+tests/fixtures/canonical-csv/*.csv -text whitespace=cr-at-eol

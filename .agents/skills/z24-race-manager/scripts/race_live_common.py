@@ -1,9 +1,7 @@
 """Shared I/O and persistent polling for independent race lanes with cross-platform file locks."""
 import argparse
-import csv
 import datetime as dt
 import portalocker
-import io
 import json
 import os
 from pathlib import Path
@@ -16,13 +14,10 @@ SKILL_SCRIPTS = Path(__file__).resolve().parent
 ROOT = SKILL_SCRIPTS.parents[3]
 WEATHER_SCRIPTS = ROOT/'scripts'
 sys.path.insert(0,str(WEATHER_SCRIPTS))
+sys.path.insert(0,str(ROOT))
 CST = dt.timezone(dt.timedelta(hours=8))
 LANES = ('weather', 'all_class', 'control_message')
-FILES = {'weather': 'radar.png', 'all_class': 'all_class.csv', 'control_message': 'control_message.csv'}
-FIELDS = {
-    'all_class': ['id','pos','pic','st','carNo','carTeam','nicname','carClass','carModel','laps','bestTm','totalTm','bestLap','diff','gap','pitstops'],
-    'control_message': ['id','index','c_time','time','cont'],
-}
+FILES = {'weather': 'radar.png'}
 
 def now():
     return dt.datetime.now(CST).isoformat(timespec='milliseconds')
@@ -43,34 +38,22 @@ def metadata(config, lane, status, attempted_at, collected_at='', error='', **ex
                 session_status=d.get('session_status',''), race_name=d.get('race_name',''),
                 session_start=d.get('start_time',''), error=str(error)[:600], **extra)
 
-def write_csv(path, meta, rows, fields):
-    text = io.StringIO(newline='')
-    writer = csv.writer(text)
-    # One physical metadata line, followed by a regular RFC4180 CSV table.
-    writer.writerow(['# collected_at', meta.get('collected_at','')] +
-                    [str(x).replace('\r',' ').replace('\n',' ') for k,v in meta.items() if k!='collected_at' for x in (k,v)])
-    writer = csv.DictWriter(text, fieldnames=fields, extrasaction='ignore')
-    writer.writeheader()
-    writer.writerows(rows)
-    atomic(path, text.getvalue())
+def data_folder(config):
+    from race_data.csv_io import initialize_run
+    path=Path(config.get('data_output',config['output']))
+    initialize_run(path,config)
+    return path
 
-def read_csv(path):
-    with Path(path).open(encoding='utf-8', newline='') as f:
-        first = next(csv.reader([f.readline()]))
-        if not first or first[0]!='# collected_at' or len(first)%2: raise ValueError('无效采集元数据')
-        meta = dict(zip(first[::2],first[1::2])); meta['collected_at']=meta.pop('# collected_at')
-        reader = csv.DictReader(f)
-        rows = list(reader)
-        return meta, reader.fieldnames or [], rows
 
 def failure(config, lane, error, status='error'):
-    meta = metadata(config,lane,status,now(),error=error)
-    out = Path(config['output'])
-    if lane!='weather':
-        write_csv(out/FILES[lane],meta,[],FIELDS[lane])
-        return
-    from race_weather import failure_image
-    failure_image(out/'radar.png',meta,config.get('weather',{}).get('location','赛场'),error)
+    from race_data.csv_io import failure as publish_failure
+    from race_adapter import collection
+    meta=metadata(config,lane,status,now(),error=error)
+    folder=data_folder(config)
+    publish_failure(folder,collection(meta))
+    if lane=='weather':
+        from race_weather import failure_image
+        failure_image(folder/'radar.png',meta,config.get('weather',{}).get('location','赛场'),error)
 
 
 def endpoint_once(config, lane, fetch=None):
@@ -86,17 +69,11 @@ def endpoint_once(config, lane, fetch=None):
     meta=metadata(config,lane,'ok',started,received,
                   round_end=round_info.get('ri_end',''),round_start=round_info.get('ri_start',''),
                   round_flag=round_info.get('ri_flag',''),row_count=len(payload['items']))
-    fields=list(FIELDS[lane])
-    # Keep extra scalar timing fields, excluding profile fields unrelated to strategy.
-    excluded={'name','photo','userid','userId','openid','unionid','phone','mobile'}
-    for row in payload['items']:
-        for key,value in row.items():
-            if key not in fields and key not in excluded and not isinstance(value,(list,dict)):fields.append(key)
-    path=Path(config['output'])/FILES[lane]
-    write_csv(path,meta,payload['items'],fields)
-    # Separate snapshots preserve pacing evidence and correction history.
-    archive=Path(config['output'])/'archive'/lane/(received.replace(':','-')+'.csv')
-    atomic(archive,path.read_bytes())
+    from race_data.csv_io import publish
+    from race_adapter import collection, result, message
+    convert=result if lane=='all_class' else message
+    rows=[convert(row) for row in payload['items']]
+    publish(data_folder(config),collection(meta),{'results' if lane=='all_class' else 'control_messages':rows})
 
 def worker_main(lane, once):
     p=argparse.ArgumentParser(description='Independent persistent '+lane+' collector')

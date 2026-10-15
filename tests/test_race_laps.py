@@ -23,3 +23,30 @@ class LapTests(unittest.TestCase):
  def test_before_first_lap(self):
   rows,s=summarize(self.rows(),dt.datetime(2025,12,20,16,tzinfo=CST))
   self.assertEqual(rows,[]);self.assertEqual(s['status'],'no_laps_before_cutoff')
+
+class LapCsvTests(unittest.TestCase):
+ def test_cli_replaces_laps_and_cutoff_analysis(self):
+  import tempfile,json
+  from unittest.mock import patch
+  import race_laps
+  from race_live_common import data_folder,endpoint_once
+  from race_data.csv_io import read_csv
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder)
+   config=dict(token='laps-run',team='A',mode='test',output=str(root),selected=dict(ssid=262,race_id=1,round_id=2,pid=3,start_time='2025/12/20 16:00:00'))
+   path=data_folder(config)
+   endpoint_once(config,'all_class',lambda *a,**k:dict(flag=1,round=dict(id=3),items=[dict(id=1,carNo='025',carTeam='A')]))
+   active=root/'active.json';active.write_text(json.dumps(dict(token='laps-run',data_output=str(path))))
+   args=['race_laps.py','--active',str(active),'--run-id','laps-run','--team','A','--at','2025-12-20T16:10:30+08:00']
+   payload=dict(flag=1,items=LapTests().rows())
+   with patch.object(sys,'argv',args),patch.object(race_laps,'read',return_value=payload),patch('builtins.print'):
+    race_laps.main();race_laps.main()
+   envelope,rows=read_csv(path/'laps.csv','laps-run','laps')
+   self.assertEqual(len(rows),10)
+   pace,stats=read_csv(path/'pace.csv','laps-run','pace')
+   self.assertEqual(stats[0].pace_median_seconds,60)
+   self.assertEqual(envelope.snapshot_id,pace.snapshot_id)
+   with patch.object(sys,'argv',args),patch.object(race_laps,'read',side_effect=OSError('offline')),patch('builtins.print'):race_laps.main()
+   _,stats=read_csv(path/'pace.csv','laps-run','pace')
+   self.assertEqual(stats[0].status,'error')
+   self.assertEqual(read_csv(path/'laps.csv')[1],[])
