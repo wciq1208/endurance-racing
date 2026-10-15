@@ -10,6 +10,7 @@ dependencies = [
     "matplotlib>=3.8,<4",
     "psutil>=7,<8",
     "portalocker>=3,<5",
+    "pydantic>=2.10,<3",
 ]
 
 [tool.uv]

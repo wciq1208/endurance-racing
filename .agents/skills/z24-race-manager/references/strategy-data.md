@@ -4,7 +4,7 @@
 
 |接口|参数|有价值的字段/验证结论|
 |---|---|---|
-|`get-race-result-item`|ssid=262,userId=0,pid=成绩CSV的id|items[].lapTm毫秒圈速、laps圈次、ri_time_of_day日期时间、timeOfDay毫秒过线时间。25/22/26号2025正式赛均成功，无需登录。pid不是正赛pid。响应不回显场次，ID必须从已校验的目标成绩中取得。|
+|`get-race-result-item`|ssid=262,userId=0,pid=results.csv的result_id|items[].lapTm毫秒圈速、laps圈次、ri_time_of_day日期时间、timeOfDay毫秒过线时间。25/22/26号2025正式赛均成功，无需登录。pid不是正赛pid。响应不回显场次，ID必须从已校验的目标成绩中取得。|
 |`get-result-realtime-race`|ssid,uid=0,pid=实时场次,tab=1..5,itemid=实时items[].id|lastTm、pitstops、s1Best/s2Best/s3Best、isPause、剩余时间字段；展开单车返回lapItems含逐圈过线时刻。当前只有旧TEST数据，字段非零与具体语义须现场验证。|
 |`get-result-realtime`|ssid,uid=0,itemId=0|场地当前场次状态。实测返回旧TEST场次，不能替代2025正式赛。|
 |`get-race-result-top`|ssid,uid=0,pid,tname|2025正赛实测“暂无排行数据”，无需优先查询。|
@@ -13,21 +13,21 @@
 
 ## 主动补取，不能停在“缺少逐圈”
 
-主采集的三路产出不变。需要配速或交通分析时，主动执行独立的一次性补查工具（不启动第四个常驻进程），将结果写入本次目录 `analysis/`：
+主采集的三路产出不变。需要配速或交通分析时，主动执行独立的一次性补查工具（不启动第四个常驻进程），将结果原子发布到当前run的laps.csv/pace.csv：
 
 ```sh
-uv run python .agents/skills/z24-race-manager/scripts/race_laps.py --results '本次目录/all_class.csv' \
-  --team '用户车队完整名称' --cars '相关对手车号,另一个车号' \
-  --output '本次目录/analysis'
+uv run python .agents/skills/z24-race-manager/scripts/race_laps.py --run-id '当前token' \
+  --team '用户车队完整名称' --cars '相关对手车号,另一个车号'
 ```
 
-历史测试添加 `--replay-cycle`：脚本用真实当前时钟计算赛程进度，加到CSV里的真实历史开赛时间，**过滤该截止时刻以后的圈记录**，不要求用户提供日期。指定历史时刻也可用 `--at '2025-12-20T20:00:00+08:00'`。这重建了逐圈数据截至某时点的视图，不包含当时的处罚、准确官方排名或车手排班。不要混入终局排名/未来公告。
+历史测试添加 `--replay-cycle`：脚本用真实当前时钟计算赛程进度，加到最新成绩snapshot元数据里的真实历史开赛时间，**过滤该截止时刻以后的圈记录**，不要求用户提供日期。指定历史时刻也可用 `--at '2025-12-20T20:00:00+08:00'`。这重建了逐圈数据截至某时点的视图，不包含当时的处罚、准确官方排名或车手排班。不要混入终局排名/未来公告。
 
-`--all-cars`用于出站交通问题，目标及全场车一并补查（最多3个并发请求）。只查目标和两个对手时，不得说已找到全场干净窗口。优先复用本轮分析文件，通常60秒内不重复同一查询。实时补查的成绩输入也必须校验身份与新鲜度。某车失败在pace.csv保留error，不应把失败车当不存在。
+`--all-cars`用于出站交通问题，目标及全场车一并补查（最多3个并发请求）。只查目标和两个对手时，不得说已找到全场干净窗口。优先复用本轮CSV分析记录，通常60秒内不重复同一查询。实时补查的成绩输入由工具校验run_id及120秒新鲜度。某车失败在pace.csv保留error，不应把失败车当不存在。
 
-输出CSV同样第一行采集元数据：
-- `analysis/laps.csv`：各车每圈过线时间、圈速、圈次、来源成绩ID和单车收到时间。
-- `analysis/pace.csv`：近10圈中位数、MAD波动、启发式剔除圈数、前10圈中位数、配速变化、最近过线距分析时刻、假定180秒损失折合圈数。剔除超过窗口中位数1.5倍或低于0.5倍的圈；不能将异常圈直接判为进站。少于5个正常样本或过线太旧时不能可靠推位置。
+输出为Pydantic通用CSV：
+- `laps.csv`：每圈crossing_at、lap_seconds、lap_number、result_id、car_number及received_at；每次全量替换本轮查询覆盖的车，按指定分析截止过滤，不追加历史批次。
+- `pace.csv`：每车analysis_at、received_at、status、近10圈pace_median_seconds、pace_mad_seconds、previous10_median_seconds、crossing_age_seconds和情景损失等通用扁平列。启发式剔除超出窗口中位数0.5～1.5倍的圈，不将异常圈直接判为进站。少于5个正常样本或过线太旧不能可靠推位置。
+- 两份文件的envelope.snapshot_id必须一致，读取工具发现混批则拒绝；本轮未查询的车不保留上轮数据，partial及每车error均不能解释为车辆不存在。
 
 默认 `--pit-cost 180` 是用户情景中的净时间损失假设，用于折合圈数；不意味着已测得真实净损失。用户有实测值时传实际值。每圈数据含时间戳，但其API传输精度不等于计时系统测量准确度。
 

@@ -33,14 +33,13 @@ class WeatherWorkerTests(unittest.TestCase):
     self.assertIn('测试天津',args.case_label)
     args.output.mkdir();Image.new('RGB',(20,20)).save(args.output/'chart.png')
     return {'collected_at':w.now(),'radar':{'ok':True,'chart':'chart.png','nowcast':{'source_time':w.now(),'available':False}}}
+   from race_data.csv_io import initialize_run,read_csv
+   a.data_output=Path(folder)/'public'
+   initialize_run(a.data_output,dict(token='abc',team='测试车队',mode='test',selected=dict(ssid=262,race_id=1,round_id=2,pid=3)))
    with patch('weather_radar_collect.collect',side_effect=collect):w.once(a)
-   with Image.open(a.output/'radar.png') as im:
+   envelope,rows=read_csv(a.data_output/'weather.csv','abc','weather')
+   self.assertEqual(len(rows),1)
+   self.assertEqual(envelope.collection.status,'ok')
+   with Image.open(a.data_output/'radar.png') as im:
     self.assertEqual(im.info['lat'],'39.04');self.assertEqual(im.info['location'],'测试天津')
     self.assertEqual(im.info['run_id'],'abc')
- def test_cleanup_leaves_other_skill(self):
-  with tempfile.TemporaryDirectory() as folder:
-   state=Path(folder)/'.runtime/z24-race-manager';out=state/'outputs';out.mkdir(parents=True)
-   other=state.parent/'other/outputs';other.mkdir(parents=True);(other/'keep.csv').write_text('keep')
-   (out/'old.csv').write_text('old')
-   with patch.object(live,'STATE',state),patch.object(live,'OUTPUTS',out):live.clear_outputs()
-   self.assertTrue((other/'keep.csv').exists());self.assertEqual(list(out.iterdir()),[])

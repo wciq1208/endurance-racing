@@ -1,20 +1,18 @@
-# endurance-racing
+# 无业务后端的静态数据看板
 
-项目是面向多赛事的agent技能集合，没有独立于宿主的LLM运行服务。没有唯一强制的“标准agent目录”，本项目采用以下边界：
+```text
+赛事接口 → skill/scripts赛事适配 → Pydantic通用模型 → 原子替换CSV
+                                                   ├─ React解析、校验、计算与展示
+                                                   └─ agent用Python读取、计算策略
+天气接口 → 公共scripts → 雷达PNG + 通用weather.csv ─────┘
+```
 
-- CLAUDE.md和.claude/skills：Claude Code薄入口，只引用正式约定和skill。Hermes通过项目skills信任流程发现.agents/skills。
-- AGENTS.md：项目路由和通用约定，不混入某场赛事规则。
-- .agents/skills/<skill-id>/SKILL.md：该赛事的决策流程和输出要求；references按需展开字段与方法。
-- 同skill的scripts：赛事数据工具、确定性计算、启动和监督。
-- 根目录scripts：无赛事反向依赖的公共天气工具；由skill提供位置、雷达站、标签、输出路径、run_id和间隔。
-- .runtime/<skill-id>：各赛事运行隔离；重启清理只影响本skill。当前产出只认active.json，数值结论依赖代码计算。
+race_data/models.py定义统一字段、秒单位、字符串标识符、可空值和采集envelope；race_data/csv_io.py负责整批校验、RFC4180编解码与os.replace发布。没有FastAPI或SQLite。前端契约由Pydantic JSON Schema导出，Papa Parse解析CSV、Ajv校验记录；不能用字符串split或自动数值推断处理车号。
 
-株洲skill启动器中定义VENUE_WEATHER，传给公共天气脚本的参数为`--lat 27.8206 --lon 113.062648 --station az9731 --location 株洲国际卡丁车场`。公共脚本不自动寻找最近雷达站：经纬度必须在给定站点图幅范围内，否则输出错误状态，不把错误场地图当可用数据。
+当前结果及全量公告每轮替换；逐圈由接口补查历史并按本轮截止过滤，每次替换本轮车队集合，不追加本地历史。laps/pace共用snapshot_id，先写不可变批次目录，再原子切换laps-active.json；读取固定同一指针，发布失败或中断不破坏上一份完整批次。旧批次被替换后保留5分钟供在途读取，再清理。单个CSV不会被读取一半，但多个CSV并非跨文件事务，所以各路必须单独核对采集时间与run。失败发布明确error空表，不能理解为没有参赛者/公告。PNG和weather.csv也独立校验。
 
-当前仍有的边界：
+公开资源在.runtime/public/race-data/<skill>/<run>/，只有CSV、雷达PNG及安全运行指针可以由Vite静态提供。配置、PID、私有路径、日志与原始雷达缓存放私有run目录。Vite开发和构建预览均禁用资源缓存，路由白名单及realpath限制防止公开其他项目文件。生产部署需自行提供同等静态资源映射；静态看板不承担登录、多租户或公网授权。
 
-1. 持续采集与AI决策是两层。宿主活跃会话执行决策轮询；后台采集不能保证后台AI被唤醒。需要全天无人值守时，应额外接入具有明确重试、状态恢复和调用预算的agent执行器。
-2. 不是独立发布的Python库。skill依赖本仓库布局；复制整个项目可移植，仅复制一个skill时还需公共天气脚本。启动器自动选择Windows或POSIX后台启动方式，使用psutil校验脚本路径和token并清理所有相关进程，使用portalocker加锁。平台验证状态见README。
-3. 车手计划、现场反馈和精确出站交通模型仍是策略能力，不是靠目录标准化就能补齐的数据。后续应增加已知输入/预期建议的策略评估用例，区分工具计算测试与模型行为评估。
+启动先停止本skill旧进程，移除私有/公开active指针，清理本skill旧产出，再创建新run，首轮成功前发布waiting CSV。发现失败时保持无active；stop停止并移除指针。其他skill不受清理影响。仅雷达连续帧缓存、启动身份及用户现场反馈需要短期状态；默认不保存历史快照。用户换人/进出站反馈留在会话约束中，不从采集数据臆测。
 
-增加第二个赛事时，使用唯一skill-id和独立运行命名空间；先复用天气CLI，不提前把不同赛事的数据接口强行抽象成同一套协议。
+agent不依赖看板进程，只读通用CSV和PNG并使用Python计算。持续AI分析仍依赖活跃harness；静态看板每30秒刷新不等于后台LLM策略。

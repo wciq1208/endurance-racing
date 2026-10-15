@@ -18,7 +18,7 @@ def report():
     packages = {}
     warnings = []
     weather_ready = True
-    for name in ('psutil', 'portalocker', 'numpy', 'PIL', 'matplotlib'):
+    for name in ('psutil', 'portalocker', 'pydantic', 'numpy', 'PIL', 'matplotlib'):
         try:
             module = importlib.import_module(name)
             packages[name] = getattr(module, '__version__', 'available')
@@ -26,8 +26,8 @@ def report():
             packages[name] = str(exc)
             if name in ('numpy', 'PIL', 'matplotlib'):
                 weather_ready = False
-                warnings.append(name + '不可用：天气图可能生成失败；CSV采集仍可启动')
-            if name in ('psutil', 'portalocker'):
+                warnings.append(name + '不可用：天气图可能生成失败；通用CSV采集仍可启动')
+            if name in ('psutil', 'portalocker', 'pydantic'):
                 errors.append(name + ': ' + str(exc))
     try:
         import portalocker

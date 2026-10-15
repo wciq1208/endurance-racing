@@ -161,6 +161,6 @@ uv run python .agents/skills/z24-race-manager/scripts/myracing_read.py get-race-
 
 ## 策略补查更新（2026-10-12）
 
-游客逐圈接口已再次验证25、22、26号2025正式赛，返回毫秒圈速及带日期的过线时间；不应将All Class没有逐圈字段误判为接口无法获取逐圈。新工具 `.agents/skills/z24-race-manager/scripts/race_laps.py` 可从成绩CSV取真实成绩ID，补查并导出laps.csv/pace.csv；`--replay-cycle`按当前16:00赛程映射截取历史逐圈，严格排除截止时刻之后的圈。
+游客逐圈接口已再次验证25、22、26号2025正式赛，返回毫秒圈速及带日期的过线时间；不应将All Class没有逐圈字段误判为接口无法获取逐圈。新工具 `.agents/skills/z24-race-manager/scripts/race_laps.py` 可从当前run的通用results.csv取真实成绩ID，补查后原子发布通用laps.csv/pace.csv；`--replay-cycle`按当前16:00赛程映射截取历史逐圈，严格排除截止时刻之后的圈。
 
 实时接口tab=4、itemid=618437在TEST01返回lapItems；场次2133495不是2025正赛2011448，不能混用。场地实时接口只返回该TEST场次；排行榜接口对2025正赛返回暂无排行。没有验证到精确进出站或车手交接时间。完整计算规范见 `.agents/skills/z24-race-manager/references/strategy-data.md`。

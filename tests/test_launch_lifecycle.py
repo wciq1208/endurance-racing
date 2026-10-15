@@ -15,11 +15,12 @@ import race_process
 
 
 class LifecycleTests(unittest.TestCase):
-    def test_restart_clears_old_output_and_stops_all_lanes(self):
+    def test_restart_clears_old_resources_and_stops_all_lanes(self):
         with tempfile.TemporaryDirectory(prefix='赛车 space ') as folder:
             root=Path(folder)
             skills=root/'.agents/skills/z24-race-manager/scripts'
             shutil.copytree(ROOT/'.agents/skills/z24-race-manager/scripts',skills,ignore=shutil.ignore_patterns('__pycache__'))
+            shutil.copytree(ROOT/'race_data',root/'race_data',ignore=shutil.ignore_patterns('__pycache__'))
             shutil.copytree(ROOT/'scripts',root/'scripts',ignore=shutil.ignore_patterns('__pycache__'))
             # Real supervisor/launcher/lock/shutdown; deterministic offline workers.
             worker="""import argparse,json,time
@@ -54,9 +55,15 @@ time.sleep(90)
                 second=start();states.append(second)
                 self.assertNotEqual(first['token'],second['token'])
                 self.assertFalse(Path(first['output']).exists())
+                self.assertFalse(Path(first['data_output']).exists())
+                public=Path(second['data_output']).parent/'active.json'
+                manifest=json.loads(public.read_text(encoding='utf-8'))
+                self.assertEqual(manifest['run']['run_id'],second['token'])
+                self.assertNotIn('config',manifest)
                 self.assertFalse(race_process.owned_processes(first,[launcher,*workers]))
                 run('stop')
                 self.assertFalse(json.loads(run('status'))['running'])
+                self.assertFalse(public.exists())
                 self.assertFalse(race_process.owned_processes(second,[launcher,*workers]))
             finally:
                 for state in states:race_process.stop_owned(state,[launcher,*workers])

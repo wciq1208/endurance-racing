@@ -1,0 +1,929 @@
+{
+  "envelope": {
+    "$defs": {
+      "Collection": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "lane": {
+            "enum": [
+              "results",
+              "control_message",
+              "weather",
+              "laps"
+            ],
+            "title": "Lane",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "waiting",
+              "ok",
+              "error",
+              "partial"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "attempted_at": {
+            "format": "date-time",
+            "title": "Attempted At",
+            "type": "string"
+          },
+          "collected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Collected At"
+          },
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          },
+          "metadata_json": {
+            "default": "{}",
+            "title": "Metadata Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "lane",
+          "status",
+          "attempted_at"
+        ],
+        "title": "Collection",
+        "type": "object"
+      },
+      "Run": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "skill_id": {
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "live",
+              "test"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "team": {
+            "title": "Team",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "station_id": {
+            "title": "Station Id",
+            "type": "string"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "round_id": {
+            "title": "Round Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "race_name": {
+            "default": "",
+            "title": "Race Name",
+            "type": "string"
+          },
+          "session_name": {
+            "default": "",
+            "title": "Session Name",
+            "type": "string"
+          },
+          "session_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Start"
+          },
+          "session_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Status"
+          }
+        },
+        "required": [
+          "run_id",
+          "skill_id",
+          "mode",
+          "team",
+          "started_at",
+          "station_id",
+          "race_id",
+          "round_id",
+          "session_id"
+        ],
+        "title": "Run",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": 2,
+        "default": 2,
+        "title": "Schema Version",
+        "type": "integer"
+      },
+      "dataset": {
+        "enum": [
+          "results",
+          "control_messages",
+          "laps",
+          "pace",
+          "weather"
+        ],
+        "title": "Dataset",
+        "type": "string"
+      },
+      "snapshot_id": {
+        "title": "Snapshot Id",
+        "type": "string"
+      },
+      "run": {
+        "$ref": "#/$defs/Run"
+      },
+      "collection": {
+        "$ref": "#/$defs/Collection"
+      }
+    },
+    "required": [
+      "dataset",
+      "snapshot_id",
+      "run",
+      "collection"
+    ],
+    "title": "Envelope",
+    "type": "object"
+  },
+  "run": {
+    "additionalProperties": false,
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      },
+      "skill_id": {
+        "title": "Skill Id",
+        "type": "string"
+      },
+      "mode": {
+        "enum": [
+          "live",
+          "test"
+        ],
+        "title": "Mode",
+        "type": "string"
+      },
+      "team": {
+        "title": "Team",
+        "type": "string"
+      },
+      "started_at": {
+        "format": "date-time",
+        "title": "Started At",
+        "type": "string"
+      },
+      "station_id": {
+        "title": "Station Id",
+        "type": "string"
+      },
+      "race_id": {
+        "title": "Race Id",
+        "type": "string"
+      },
+      "round_id": {
+        "title": "Round Id",
+        "type": "string"
+      },
+      "session_id": {
+        "title": "Session Id",
+        "type": "string"
+      },
+      "race_name": {
+        "default": "",
+        "title": "Race Name",
+        "type": "string"
+      },
+      "session_name": {
+        "default": "",
+        "title": "Session Name",
+        "type": "string"
+      },
+      "session_start": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Session Start"
+      },
+      "session_status": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Session Status"
+      }
+    },
+    "required": [
+      "run_id",
+      "skill_id",
+      "mode",
+      "team",
+      "started_at",
+      "station_id",
+      "race_id",
+      "round_id",
+      "session_id"
+    ],
+    "title": "Run",
+    "type": "object"
+  },
+  "datasets": {
+    "results": {
+      "columns": [
+        "result_id",
+        "car_number",
+        "team_name",
+        "driver_name",
+        "class_name",
+        "position",
+        "class_position",
+        "completed_laps",
+        "best_lap_seconds",
+        "total_seconds",
+        "best_lap_number",
+        "gap_seconds",
+        "gap_laps",
+        "leader_gap_seconds",
+        "leader_gap_laps",
+        "pit_stops",
+        "source_status",
+        "extra_json"
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "result_id": {
+            "title": "Result Id",
+            "type": "string"
+          },
+          "car_number": {
+            "title": "Car Number",
+            "type": "string"
+          },
+          "team_name": {
+            "title": "Team Name",
+            "type": "string"
+          },
+          "driver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Driver Name"
+          },
+          "class_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Class Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Position"
+          },
+          "class_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Class Position"
+          },
+          "completed_laps": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Completed Laps"
+          },
+          "best_lap_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Best Lap Seconds"
+          },
+          "total_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Seconds"
+          },
+          "best_lap_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Best Lap Number"
+          },
+          "gap_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gap Seconds"
+          },
+          "gap_laps": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gap Laps"
+          },
+          "leader_gap_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Leader Gap Seconds"
+          },
+          "leader_gap_laps": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Leader Gap Laps"
+          },
+          "pit_stops": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pit Stops"
+          },
+          "source_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Status"
+          },
+          "extra_json": {
+            "default": "{}",
+            "title": "Extra Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result_id",
+          "car_number",
+          "team_name"
+        ],
+        "title": "Result",
+        "type": "object"
+      }
+    },
+    "control_messages": {
+      "columns": [
+        "message_id",
+        "sequence",
+        "published_at_source",
+        "event_time_source",
+        "body"
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sequence"
+          },
+          "published_at_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Published At Source"
+          },
+          "event_time_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Event Time Source"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "body"
+        ],
+        "title": "ControlMessage",
+        "type": "object"
+      }
+    },
+    "laps": {
+      "columns": [
+        "result_id",
+        "car_number",
+        "team_name",
+        "lap_id",
+        "lap_number",
+        "crossing_at",
+        "lap_seconds",
+        "received_at"
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "result_id": {
+            "title": "Result Id",
+            "type": "string"
+          },
+          "car_number": {
+            "title": "Car Number",
+            "type": "string"
+          },
+          "team_name": {
+            "title": "Team Name",
+            "type": "string"
+          },
+          "lap_id": {
+            "title": "Lap Id",
+            "type": "string"
+          },
+          "lap_number": {
+            "title": "Lap Number",
+            "type": "integer"
+          },
+          "crossing_at": {
+            "format": "date-time",
+            "title": "Crossing At",
+            "type": "string"
+          },
+          "lap_seconds": {
+            "exclusiveMinimum": 0,
+            "title": "Lap Seconds",
+            "type": "number"
+          },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result_id",
+          "car_number",
+          "team_name",
+          "lap_id",
+          "lap_number",
+          "crossing_at",
+          "lap_seconds",
+          "received_at"
+        ],
+        "title": "Lap",
+        "type": "object"
+      }
+    },
+    "pace": {
+      "columns": [
+        "result_id",
+        "analysis_at",
+        "received_at",
+        "car_number",
+        "team_name",
+        "status",
+        "laps_at_cutoff",
+        "last_crossing_at",
+        "last_lap_seconds",
+        "crossing_age_seconds",
+        "pace_median_seconds",
+        "pace_mad_seconds",
+        "pace_samples",
+        "excluded_recent_laps",
+        "previous10_median_seconds",
+        "pace_change_seconds",
+        "assumed_pit_loss_seconds",
+        "pit_loss_equivalent_laps",
+        "phase_estimate_usable",
+        "error"
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "result_id": {
+            "title": "Result Id",
+            "type": "string"
+          },
+          "analysis_at": {
+            "format": "date-time",
+            "title": "Analysis At",
+            "type": "string"
+          },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "car_number": {
+            "title": "Car Number",
+            "type": "string"
+          },
+          "team_name": {
+            "title": "Team Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "no_laps_before_cutoff"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "laps_at_cutoff": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Laps At Cutoff"
+          },
+          "last_crossing_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Last Crossing At"
+          },
+          "last_lap_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Last Lap Seconds"
+          },
+          "crossing_age_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Crossing Age Seconds"
+          },
+          "pace_median_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pace Median Seconds"
+          },
+          "pace_mad_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pace Mad Seconds"
+          },
+          "pace_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pace Samples"
+          },
+          "excluded_recent_laps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Excluded Recent Laps"
+          },
+          "previous10_median_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Previous10 Median Seconds"
+          },
+          "pace_change_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pace Change Seconds"
+          },
+          "assumed_pit_loss_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Assumed Pit Loss Seconds"
+          },
+          "pit_loss_equivalent_laps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pit Loss Equivalent Laps"
+          },
+          "phase_estimate_usable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phase Estimate Usable"
+          },
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result_id",
+          "analysis_at",
+          "received_at",
+          "car_number",
+          "team_name",
+          "status"
+        ],
+        "title": "LapAnalysis",
+        "type": "object"
+      }
+    },
+    "weather": {
+      "columns": [
+        "run_id",
+        "collected_at",
+        "source_time",
+        "image_path",
+        "nowcast_available"
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "collected_at": {
+            "format": "date-time",
+            "title": "Collected At",
+            "type": "string"
+          },
+          "source_time": {
+            "format": "date-time",
+            "title": "Source Time",
+            "type": "string"
+          },
+          "image_path": {
+            "title": "Image Path",
+            "type": "string"
+          },
+          "nowcast_available": {
+            "title": "Nowcast Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id",
+          "collected_at",
+          "source_time",
+          "image_path",
+          "nowcast_available"
+        ],
+        "title": "WeatherFrame",
+        "type": "object"
+      }
+    }
+  }
+}
